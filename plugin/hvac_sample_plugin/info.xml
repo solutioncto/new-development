@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  <name>HVAC Sample Plugin</name>
+  <author>Eric Baller</author>
+<!-- Feel free to include your github repo here -->
+<!--  <website>https://www.userspice.com</website>-->
+
+<!-- the version of the plugin iteself -->
+  <version>0.5</version>
+
+<!-- release date of THIS version -->
+  <release>December 1,2020</release>
+
+<!-- the last version of UserSpice you tested the plugin with -->
+  <tested>5.1</tested>
+
+<!-- What does your plugin do? -->
+  <description>Provides a reference architecture for HVAC Development</description>
+
+  <!-- This is the launch button in the plugin manager. If it is blank or missing, Configure Plugin will show up. -->
+<!--    <button>hvac_sample_plugin</button>-->
+</plugin>
