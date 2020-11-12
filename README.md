@@ -1,7 +1,7 @@
 # README #
 
 * This repo is for the development of functionality in the HVAC application using userspice - https://userspice.com/
-* developer can for the repo https://bitbucket.org/eballer/compose-spice/src/master/ to use compose to create a dev environment.
+* developer can fork the repo https://bitbucket.org/eballer/compose-spice/src/master/ to use compose to create a dev environment.
 
 ### HVAC Plugin Development ###
 * create a userspice plugin
