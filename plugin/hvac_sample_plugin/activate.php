@@ -26,8 +26,6 @@ if($checkC > 0){
 	}
 }else{
 	err($plugin_name.' is not found! Has it been installed?');
-
-	
 	logger($user->data()->id,"USPlugins",$plugin_name." plugin not found - possibly not installed");
 }
 
