@@ -3,7 +3,7 @@
 <?php
 include "plugin_info.php";
 pluginActive($plugin_name);
- if(!empty($_POST['plugin_hvac_sample_plugin'])){
+ if(!empty($_POST['plugin_userfiles'])){
    $token = $_POST['csrf'];
 if(!Token::check($token)){
   include($abs_us_root.$us_url_root.'usersc/scripts/token_error.php');
@@ -16,7 +16,7 @@ if(!Token::check($token)){
  		<div class="row">
  			<div class="col-sm-12">
           <a href="<?=$us_url_root?>users/admin.php?view=plugins">Return to the Plugin Manager</a>
- 					<h1>Configure the HVAC Plugin!</h1>
+ 					<h1>Configure the user files Plugin!</h1>
 
  			</div> <!-- /.col -->
  		</div> <!-- /.row -->
