@@ -24,49 +24,53 @@ require_once $abs_us_root.$us_url_root.'users/includes/template/prep.php';
 if (!securePage($_SERVER['PHP_SELF'])) {
     die();
 }
-$hooks =  getMyHooks();
+
+$hooks = getMyHooks();
 includeHook($hooks, 'pre');
-//dealing with if the user is logged in
+
+// dealing with if the user is logged in
 if ($user->isLoggedIn() && !checkMenu(2, $user->data()->id)) {
-    if (($settings->site_offline==1) && (!in_array($user->data()->id, $master_account)) && ($currentPage != 'login.php') && ($currentPage != 'maintenance.php')) {
+    if (($settings->site_offline == 1) && (!in_array($user->data()->id, $master_account)) && ($currentPage != 'login.php') && ($currentPage != 'maintenance.php')) {
         $user->logout();
         Redirect::to($us_url_root.'users/maintenance.php');
     }
 }
 
-
 $emailQ = $db->query("SELECT * FROM email");
 $emailR = $emailQ->first();
 
-//PHP Goes Here!
-$errors=[];
-$successes=[];
+// PHP Goes Here!
+$errors = [];
+$successes = [];
 $userId = $user->data()->id;
 $grav = get_gravatar(strtolower(trim($user->data()->email)));
 $validation = new Validate();
-$userdetails=$user->data();
-//Temporary Success Message
+$userdetails = $user->data();
+// Temporary Success Message
 $holdover = Input::get('success');
 if ($holdover == 'true') {
     bold("Account Updated");
 }
+
 // error_reporting(E_ALL);
-// //Forms posted
+
+// Forms posted
 $formType = isset($_POST['formType']) ? $_POST['formType'] : '';
 if ($formType == 'dataTable') {
-    $data = $db->query('SELECT * FROM users_files WHERE 1=1');
+    $data = $db->query('SELECT * FROM plg_tbl_uf WHERE 1=1');
     $allDataCount = count($data->result());
     dump($allDataCount);
     die;
 
-    $data = $db->query('SELECT * FROM users_files WHERE 1=1');
+    $data = $db->query('SELECT * FROM plg_tbl_uf WHERE 1=1');
     $data->result();
     exit();
 }
+
 if (!empty($_POST)) {
     $token = $_POST['csrf'];
     if (!Token::check($token)) {
-        include($abs_us_root.$us_url_root.'usersc/scripts/token_error.php');
+        include($abs_us_root . $us_url_root . 'usersc/scripts/token_error.php');
     } else {
         includeHook($hooks, 'post');
         $name       = isset($_REQUEST["name"]) ? $_REQUEST["name"] : '';
@@ -85,6 +89,7 @@ if (!empty($_POST)) {
             $newFileName    = md5(time() . $fileName) . '.' . $fileExtension;
             $allowedfileExtensions = array('pdf');
             if (in_array($fileExtension, $allowedfileExtensions)) {
+                // Do we need to do something here?
             }
             // directory in which the uploaded file will be moved
             error_reporting(E_ALL);
@@ -98,7 +103,7 @@ if (!empty($_POST)) {
             $dest_path = $uploadFileDir .'/'. $newFileName;
 
             if (move_uploaded_file($fileTmpPath, $dest_path)) {
-                $message ='File is successfully uploaded.';
+                $message = 'File is successfully uploaded.';
             } else {
                 $message = 'There was some error moving the file to upload directory. Please make sure the upload directory is writable by web server.';
             }
@@ -112,30 +117,30 @@ if (!empty($_POST)) {
             'note'          => $note,
             'created_at'    => "NOW()",
         ];
-        // $query = "INSERT INTO `users_files` (`file_type`, `file_name`, `file_path`, `link`, `note`, `created_at`, `updated_at`, `deleted_at`) VALUES (1,     'sadasd', 'asdasd', 'asdasd', 'asdasdasdasd');";
+        // $query = "INSERT INTO `plg_tbl_uf` (`file_type`, `file_name`, `file_path`, `link`, `note`, `created_at`, `updated_at`, `deleted_at`) VALUES (1,     'sadasd', 'asdasd', 'asdasd', 'asdasdasdasd');";
         // $userUploads = $db->query($query);
-        $userUploads = $db->insert('users_files', $userFilesArr);
+        $userUploads = $db->insert('plg_tbl_uf', $userFilesArr);
         if ($userUploads) {
-            $message ='File is successfully uploaded.';
+            $message = 'File is successfully uploaded.';
         } else {
             $message = 'There was some error moving the file to upload directory. Please make sure the upload directory is writable by web server.';
         }
 
-        //Update display name
-        //if (($settings->change_un == 0) || (($settings->change_un == 2) && ($user->data()->un_changed == 1)))
+        // Update display name
+        // if (($settings->change_un == 0) || (($settings->change_un == 2) && ($user->data()->un_changed == 1)))
         $displayname = Input::get("username");
         if ($userdetails->username != $displayname && ($settings->change_un == 1 || (($settings->change_un == 2) && ($user->data()->un_changed == 0)))) {
-            $fields=array(
-                'username'=>$displayname,
+            $fields = array(
+                'username' => $displayname,
                 'un_changed' => 1,
             );
             $validation->check($_POST, array(
                 'username' => array(
                     'display' => lang("GEN_UNAME"),
                     'required' => true,
-                    'unique_update' => 'users,'.$userId,
-                                        'min' => $settings->min_un,
-                              'max' => $settings->max_un
+                    'unique_update' => 'users,' . $userId,
+                    'min' => $settings->min_un,
+                    'max' => $settings->max_un
                 )
             ));
             if ($validation->passed()) {
@@ -147,18 +152,19 @@ if (!empty($_POST)) {
                 $successes[]=lang("GEN_UNAME")." ".lang("GEN_UPDATED");
                 logger($user->data()->id, "User", "Changed username from $userdetails->username to $displayname.");
             } else {
-                //validation did not pass
+                // validation did not pass
                 foreach ($validation->errors() as $error) {
                     $errors[] = $error;
                 }
             }
         } else {
-            $displayname=$userdetails->username;
+            $displayname = $userdetails->username;
         }
-        //Update first name
+
+        // Update first name
         $fname = ucfirst(Input::get("fname"));
         if ($userdetails->fname != $fname) {
-            $fields=array('fname'=>$fname);
+            $fields = array('fname' => $fname);
             $validation->check($_POST, array(
                 'fname' => array(
                     'display' => lang("GEN_FNAME"),
@@ -169,21 +175,22 @@ if (!empty($_POST)) {
             ));
             if ($validation->passed()) {
                 $db->update('users', $userId, $fields);
-                $successes[]=lang("GEN_FNAME")." ".lang("GEN_UPDATED");
+                $successes[] = lang("GEN_FNAME")." ".lang("GEN_UPDATED");
                 logger($user->data()->id, "User", "Changed fname from $userdetails->fname to $fname.");
             } else {
-                //validation did not pass
+                // validation did not pass
                 foreach ($validation->errors() as $error) {
                     $errors[] = $error;
                 }
             }
         } else {
-            $fname=$userdetails->fname;
+            $fname = $userdetails->fname;
         }
-        //Update last name
+
+        // Update last name
         $lname = ucfirst(Input::get("lname"));
         if ($userdetails->lname != $lname) {
-            $fields=array('lname'=>$lname);
+            $fields = array('lname' => $lname);
             $validation->check($_POST, array(
                 'lname' => array(
                     'display' => lang("GEN_LNAME"),
@@ -194,7 +201,7 @@ if (!empty($_POST)) {
             ));
             if ($validation->passed()) {
                 $db->update('users', $userId, $fields);
-                $successes[]=lang("GEN_FNAME")." ".lang("GEN_UPDATED");
+                $successes[] = lang("GEN_FNAME")." ".lang("GEN_UPDATED");
                 logger($user->data()->id, "User", "Changed lname from $userdetails->lname to $lname.");
             } else {
                 //validation did not pass
@@ -203,54 +210,55 @@ if (!empty($_POST)) {
                 }
             }
         } else {
-            $lname=$userdetails->lname;
+            $lname = $userdetails->lname;
         }
+
         if (!empty($_POST['password']) || $userdetails->email != $_POST['email'] || !empty($_POST['resetPin'])) {
-            //Check password for email or pw update
+            // Check password for email or pw update
             if (is_null($userdetails->password) || password_verify(Input::get('old'), $user->data()->password)) {
-                //Update email
+                // Update email
                 $email = Input::get("email");
                 if ($userdetails->email != $email) {
                     $confemail = Input::get("confemail");
-                    $fields=array('email'=>$email);
+                    $fields = array('email' => $email);
                     $validation->check($_POST, array(
-                'email' => array(
-                    'display' => lang("GEN_EMAIL"),
-                    'required' => true,
-                    'valid_email' => true,
-                    'unique_update' => 'users,'.$userId,
-                    'min' => 5,
-                    'max' => 100
-                )
-            ));
+                        'email' => array(
+                            'display' => lang("GEN_EMAIL"),
+                            'required' => true,
+                            'valid_email' => true,
+                            'unique_update' => 'users,'.$userId,
+                            'min' => 5,
+                            'max' => 100
+                        )
+                    ));
                     if ($validation->passed()) {
                         if ($confemail == $email) {
-                            if ($emailR->email_act==0) {
+                            if ($emailR->email_act == 0) {
                                 $db->update('users', $userId, $fields);
-                                $successes[]=lang("GEN_EMAIL")." ".lang("GEN_UPDATED");
+                                $successes[] = lang("GEN_EMAIL")." ".lang("GEN_UPDATED");
                                 logger($user->data()->id, "User", "Changed email from $userdetails->email to $email.");
                             }
-                            if ($emailR->email_act==1) {
-                                $vericode=randomstring(15);
-                                $vericode_expiry=date("Y-m-d H:i:s", strtotime("+$settings->join_vericode_expiry hours", strtotime(date("Y-m-d H:i:s"))));
-                                $db->update('users', $userId, ['email_new'=>$email,'vericode' => $vericode,'vericode_expiry' => $vericode_expiry]);
-                                //Send the email
+                            if ($emailR->email_act == 1) {
+                                $vericode = randomstring(15);
+                                $vericode_expiry = date("Y-m-d H:i:s", strtotime("+$settings->join_vericode_expiry hours", strtotime(date("Y-m-d H:i:s"))));
+                                $db->update('users', $userId, ['email_new' => $email, 'vericode' => $vericode, 'vericode_expiry' => $vericode_expiry]);
+                                // Send the email
                                 $options = array(
-                              'fname' => $user->data()->fname,
-                              'email' => rawurlencode($user->data()->email),
-                              'vericode' => $vericode,
-                                            'join_vericode_expiry' => $settings->join_vericode_expiry
-                            );
-                                $encoded_email=rawurlencode($email);
+                                    'fname' => $user->data()->fname,
+                                    'email' => rawurlencode($user->data()->email),
+                                    'vericode' => $vericode,
+                                    'join_vericode_expiry' => $settings->join_vericode_expiry
+                                );
+                                $encoded_email = rawurlencode($email);
                                 $subject = lang("EML_VER");
-                                $body =  email_body('_email_template_verify_new.php', $options);
-                                $email_sent=email($email, $subject, $body);
+                                $body = email_body('_email_template_verify_new.php', $options);
+                                $email_sent = email($email, $subject, $body);
                                 if (!$email_sent) {
                                     $errors[] = lang("ERR_EMAIL");
                                 } else {
-                                    $successes[]=lang("EML_CHK")." ".$settings->join_vericode_expiry." ".lang("T_HOURS");
+                                    $successes[] = lang("EML_CHK")." ".$settings->join_vericode_expiry . " " . lang("T_HOURS");
                                 }
-                                if ($emailR->email_act==1) {
+                                if ($emailR->email_act == 1) {
                                     logger($user->data()->id, "User", "Requested change email from $userdetails->email to $email. Verification email sent.");
                                 }
                             }
@@ -258,44 +266,45 @@ if (!empty($_POST)) {
                             $errors[] = lang("EML_MAT");
                         }
                     } else {
-                        //validation did not pass
+                        // validation did not pass
                         foreach ($validation->errors() as $error) {
                             $errors[] = $error;
                         }
                     }
                 } else {
-                    $email=$userdetails->email;
+                    $email = $userdetails->email;
                 }
+
                 if (!empty($_POST['password'])) {
                     $validation->check($_POST, array(
-                'password' => array(
-                    'display' => lang("NEW_PW"),
-                    'required' => true,
-                    'min' => $settings->min_pw,
-                'max' => $settings->max_pw,
-                ),
-                'confirm' => array(
-                    'display' => lang("PW_CONF"),
-                    'required' => true,
-                    'matches' => 'password',
-                ),
-            ));
+                        'password' => array(
+                            'display' => lang("NEW_PW"),
+                            'required' => true,
+                            'min' => $settings->min_pw,
+                            'max' => $settings->max_pw,
+                        ),
+                        'confirm' => array(
+                            'display' => lang("PW_CONF"),
+                            'required' => true,
+                            'matches' => 'password',
+                        ),
+                    ));
                     foreach ($validation->errors() as $error) {
                         $errors[] = $error;
                     }
-                    if (empty($errors) && Input::get('old')!=Input::get('password')) {
-                        //process
+                    if (empty($errors) && Input::get('old') != Input::get('password')) {
+                        // process
                         $new_password_hash = password_hash(Input::get('password'), PASSWORD_BCRYPT, array('cost' => 12));
-                        $user->update(array('password' => $new_password_hash,'force_pr' => 0,'vericode' => randomstring(15),), $user->data()->id);
-                        $successes[]=lang("PW_UPD");
+                        $user->update(array('password' => $new_password_hash, 'force_pr' => 0, 'vericode' => randomstring(15),), $user->data()->id);
+                        $successes[] = lang("PW_UPD");
                         logger($user->data()->id, "User", "Updated password.");
-                        if ($settings->session_manager==1) {
-                            $passwordResetKillSessions=passwordResetKillSessions();
+                        if ($settings->session_manager == 1) {
+                            $passwordResetKillSessions = passwordResetKillSessions();
                             if (is_numeric($passwordResetKillSessions)) {
-                                if ($passwordResetKillSessions==1) {
+                                if ($passwordResetKillSessions == 1) {
                                     $successes[] = lang("SESS_SUC")." 1 ".lang("GEN_SESSION");
                                 }
-                                if ($passwordResetKillSessions >1) {
+                                if ($passwordResetKillSessions > 1) {
                                     $successes[] = lang("SESS_SUC").$passwordResetKillSessions.lang("GEN_SESSIONS");
                                 }
                             } else {
@@ -303,19 +312,19 @@ if (!empty($_POST)) {
                             }
                         }
                     } else {
-                        if (Input::get('old')==Input::get('password')) {
+                        if (Input::get('old') == Input::get('password')) {
                             $errors[] = lang("ERR_PW_SAME");
                         }
                     }
                 }
-                if (!empty($_POST['resetPin']) && Input::get('resetPin')==1) {
-                    $user->update(['pin'=>null]);
+                if (!empty($_POST['resetPin']) && Input::get('resetPin') == 1) {
+                    $user->update(['pin' => null]);
                     logger($user->data()->id, "User", "Reset PIN");
-                    $successes[]=lang("SET_PIN");
-                    $successes[]=lang("SET_PIN_NEXT");
+                    $successes[] = lang("SET_PIN");
+                    $successes[] = lang("SET_PIN_NEXT");
                 }
             } else {
-                $errors[]=lang("ERR_PW_FAIL");
+                $errors[] = lang("ERR_PW_FAIL");
             }
         }
     }
@@ -323,14 +332,17 @@ if (!empty($_POST)) {
 }
 // mod to allow edited values to be shown in form after update
 $user2 = new User();
-$userdetails=$user2->data();
+$userdetails = $user2->data();
 ?>
+
 <link rel="stylesheet" href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">
 <div class="row">
     <div class="col-sm-12 col-md-12">
         <h1 class="h3 p-2 text-gray-800">Files & Links</h1>
         <div class="p-2 float-right">
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">Add Files & Links</button>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+                Add Files & Links
+            </button>
         </div>
     </div>
 
@@ -343,15 +355,15 @@ $userdetails=$user2->data();
                 <div class="table-responsive">
                     <table id="file_uploads" class="table" style="width:100%">
                         <thead>
-                            <tr>
-                                <th width="10%">Sr No.</th>
-                                <th width="10%">File Type</th>
-                                <th width="10%">Name</th>
-                                <th width="10%">Link | Document</th>
-                                <th width="30%">Note</th>
-                                <th>Created Date</th>
-                                <!-- <th>Actions</th> -->
-                            </tr>
+                        <tr>
+                            <th width="10%">Sr No.</th>
+                            <th width="10%">File Type</th>
+                            <th width="10%">Name</th>
+                            <th width="10%">Link | Document</th>
+                            <th width="30%">Note</th>
+                            <th>Created Date</th>
+                            <!-- <th>Actions</th> -->
+                        </tr>
                         </thead>
                     </table>
                 </div>
@@ -360,11 +372,11 @@ $userdetails=$user2->data();
     </div>
 </div>
 
-<!-- Modal -->
+<!-- File upload Modal -->
 <form id="fupForm" name='updateAccount' action='user_uploads.php' method='post' enctype="multipart/form-data">
     <input type="hidden" name="formType" value="addNote">
     <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
+         aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -376,12 +388,15 @@ $userdetails=$user2->data();
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-sm-12 col-md-12">
-                            <?php if (!$errors=='') { ?><div class="alert alert-danger"><?=display_errors($errors);?> </div>
+                            <?php if (!$errors == '') { ?>
+                                <div class="alert alert-danger"><?= display_errors($errors); ?> </div>
                             <?php } ?>
-                            <?php if (!$successes=='') { ?><div class="alert alert-success"><?=display_successes($successes);?></div><?php } includeHook($hooks, 'body'); ?>
+                            <?php if (!$successes == '') { ?>
+                                <div class="alert alert-success"><?= display_successes($successes); ?></div><?php }
+                            includeHook($hooks, 'body'); ?>
                             <div class="form-group">
                                 <label for="exampleInputEmail1">File Type</label>
-                                <select required id="fileType" class="form-control accordion-dropdpwn" name="type">
+                                <select required id="fileType" class="form-control accordion-dropdown" name="type">
                                     <option value="Text" data-parent="#File">Text</option>
                                     <option value="File" data-parent="#Text">Document</option>
                                     <option value="Link" data-parent="#Link">Link</option>
@@ -389,7 +404,8 @@ $userdetails=$user2->data();
                             </div>
                             <div class="form-group">
                                 <label for="name">Name</label>
-                                <input required type="text" class="form-control" id="name" name="name" placeholder="Name" maxlength="50">
+                                <input required type="text" class="form-control" id="name" name="name"
+                                       placeholder="Name" maxlength="50">
                             </div>
                             <div id="Text" class="form-group">
                                 <label for="exampleInputPassword1">Note</label>
@@ -397,22 +413,25 @@ $userdetails=$user2->data();
                             </div>
                             <div id="Link" class="form-group" style="display:none;">
                                 <label for="name">Link</label>
-                                <input type="url" class="form-control" id="url" name="url" placeholder="https://wwww.example.com">
+                                <input type="url" class="form-control" id="url" name="url"
+                                       placeholder="https://wwww.example.com">
                             </div>
                             <div id="File" class="form-group" style="display:none;">
                                 <label for="document">Upload File</label>
                                 <input type="file" id="document" name="document">
                             </div>
-                            <?php includeHook($hooks, 'form');?>
-                            <input type="hidden" name="csrf" value="<?=Token::generate();?>" />
+                            <?php includeHook($hooks, 'form'); ?>
+                            <input type="hidden" name="csrf" value="<?= Token::generate(); ?>"/>
                             <div class="row">
-                                <div class="col-md-12"><div class="statusMsg"></div></div>
+                                <div class="col-md-12">
+                                    <div class="statusMsg"></div>
+                                </div>
                             </div>
                             <?php
-                                if (isset($user->data()->oauth_provider) && $user->data()->oauth_provider != null) {
-                                    echo lang("ERR_GOOG");
-                                }
-                                includeHook($hooks, 'bottom');
+                            if (isset($user->data()->oauth_provider) && $user->data()->oauth_provider != null) {
+                                echo lang("ERR_GOOG");
+                            }
+                            includeHook($hooks, 'bottom');
                             ?>
                         </div>
                     </div>
@@ -420,11 +439,12 @@ $userdetails=$user2->data();
                 <div class="modal-footer">
                     <div class="row">
                         <div class="col-6 text-left">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                            <!-- <a class="btn btn-secondary" href="../users/account.php"><?=lang("GEN_CANCEL");?></a> -->
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <!-- <a class="btn btn-secondary" href="../users/account.php"><?= lang("GEN_CANCEL"); ?></a> -->
                         </div>
                         <div class="col-6 text-right">
-                            <input class='btn btn-primary' type='submit' value='<?=lang("GEN_SUBMIT");?>' class='submit' />
+                            <input class='btn btn-primary' type='submit' value='<?= lang("GEN_SUBMIT"); ?>'
+                                   class='submit'/>
                         </div>
                     </div>
                     <!-- <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -435,143 +455,146 @@ $userdetails=$user2->data();
     </div>
 </form>
 
-<?php require_once $abs_us_root . $us_url_root . 'usersc/templates/' . $settings->template . '/container_close.php'; //custom template container?>
-<?php require_once $abs_us_root . $us_url_root . 'users/includes/page_footer.php'; ?>
+<?php require_once $abs_us_root.$us_url_root.'usersc/templates/'.$settings->template.'/container_close.php'; // custom template container?>
+<?php require_once $abs_us_root.$us_url_root.'users/includes/page_footer.php'; ?>
 
 <!-- Place any per-page javascript here -->
 <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript">
-$(document).ready(function() {
-    var dtable;
-    $.fn.dataTable.ext.errMode = 'none';
-    dtable = $('#file_uploads').DataTable({
-        pageLength: 25,
-        order: [
-            [5, "desc"]
-        ],
-        dom: 'Bfrtip',
-        columnDefs: [{
+    $(document).ready(function () {
+        var dtable;
+        $.fn.dataTable.ext.errMode = 'none';
+        dtable = $('#file_uploads').DataTable({
+            pageLength: 25,
+            order: [
+                [5, "desc"]
+            ],
+            dom: 'Bfrtip',
+            columnDefs: [{
                 searchPanes: {
                     show: true,
                 },
                 targets: [1]
             },
-            {
-                searchPanes: {
-                    cascadePanes: true,
-                    columns: [0, 1, 2, 3, 5]
-                },
-            }
-        ],
-        buttons: {
-            buttons: false,
-            dom: {
-                button: {
-                    className: 'btn'
+                {
+                    searchPanes: {
+                        cascadePanes: true,
+                        columns: [0, 1, 2, 3, 5]
+                    },
                 }
-            }
-        },
-        processing: true,
-        serverSide: true,
-        serverMethod: 'post',
-        ajax: {
-            "url": 'ajax_users_files.php',
-            "data": function(d) {
-                return $.extend({}, d, {
-                    "formType": 'dataTable',
-                    // "fBookingNo": $('.bookingNoSelect>option:selected').val(),
-                    // "fProvider": $('.providerSelect>option:selected').val(),
-                    // "fCustomer": $('.customerSelect>option:selected').val(),
-                    // "fStartDate": $('#dp4').val(),
-                    // "fEndDate": $('#dp5').val(),
-                    // "userid": $('#userId').val()
-                });
-            }
-        },
-        columns: [
-            {data: 'serial'},
-            {data: 'file_type'},
-            {data: 'file_name'},
-            {data: 'link',"orderable": false,},
-            {data: 'note',"orderable": false,},
-            {data: 'created_at'},
-            // {data: 'Actions',    "orderable": false,},
-        ],
-    });
-    // Submit form data via Ajax
-    $("#fupForm").on('submit', function(e){
-        e.preventDefault();
-        $.ajax({
-            type: 'POST',
-            url: 'ajax_users_files.php',
-            data: new FormData(this),
-            // data: $("#fupForm").serialize(),
-            dataType: 'json',
-            contentType: false,
-            cache: false,
-            processData:false,
-            beforeSend: function(){
-                $('.submitBtn').attr("disabled","disabled");
-                $('#fupForm').css("opacity",".5");
+            ],
+            buttons: {
+                buttons: false,
+                dom: {
+                    button: {
+                        className: 'btn'
+                    }
+                }
             },
-            success: function(response){ //console.log(response);
-                $('.statusMsg').html('');
-                if(response.status == 1){
-                    $('#fupForm')[0].reset();
-                    $('.statusMsg').html('<p class="alert alert-success">'+response.message+'</p>');
-                }else{
-                    $('.statusMsg').html('<p class="alert alert-danger">'+response.message+'</p>');
+            processing: true,
+            serverSide: true,
+            serverMethod: 'post',
+            ajax: {
+                "url": 'ajax_users_files.php',
+                "data": function (d) {
+                    return $.extend({}, d, {
+                        "formType": 'dataTable',
+                        // "fBookingNo": $('.bookingNoSelect>option:selected').val(),
+                        // "fProvider": $('.providerSelect>option:selected').val(),
+                        // "fCustomer": $('.customerSelect>option:selected').val(),
+                        // "fStartDate": $('#dp4').val(),
+                        // "fEndDate": $('#dp5').val(),
+                        // "userid": $('#userId').val()
+                    });
                 }
-                $('#fupForm').css("opacity","");
-                $(".submitBtn").removeAttr("disabled");
-                dtable.ajax.reload();
-                setTimeout(function() {$('#exampleModal').modal('hide');}, 1500);
+            },
+            columns: [
+                {data: 'serial'},
+                {data: 'file_type'},
+                {data: 'file_name'},
+                {data: 'link', "orderable": false,},
+                {data: 'note', "orderable": false,},
+                {data: 'created_at'},
+                // {data: 'Actions',    "orderable": false,},
+            ],
+        });
+        // Submit form data via Ajax
+        $("#fupForm").on('submit', function (e) {
+            e.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: 'ajax_users_files.php',
+                data: new FormData(this),
+                // data: $("#fupForm").serialize(),
+                dataType: 'json',
+                contentType: false,
+                cache: false,
+                processData: false,
+                beforeSend: function () {
+                    $('.submitBtn').attr("disabled", "disabled");
+                    $('#fupForm').css("opacity", ".5");
+                },
+                success: function (response) {
+                    // console.log(response);
+                    $('.statusMsg').html('');
+                    if (response.status == 1) {
+                        $('#fupForm')[0].reset();
+                        $('.statusMsg').html('<p class="alert alert-success">' + response.message + '</p>');
+                    } else {
+                        $('.statusMsg').html('<p class="alert alert-danger">' + response.message + '</p>');
+                    }
+                    $('#fupForm').css("opacity", "");
+                    $(".submitBtn").removeAttr("disabled");
+                    dtable.ajax.reload();
+                    setTimeout(function () {
+                        $('#exampleModal').modal('hide');
+                    }, 1500);
+                }
+            });
+        });
+        // File type validation
+        $("#document").change(function () {
+            var file = this.files[0];
+            var fileType = file.type;
+            var match = ['application/pdf', 'application/msword', 'application/vnd.ms-office', 'image/jpeg', 'image/png', 'image/jpg'];
+            if (!((fileType == match[0]) || (fileType == match[1]) || (fileType == match[2]) || (fileType == match[3]) || (fileType == match[4]) || (fileType == match[5]))) {
+                alert('Sorry, only PDF, DOC, JPG, JPEG, & PNG files are allowed to upload.');
+                $("#document").val('');
+                return false;
             }
         });
+        $('#fileType').change(function () {
+            var selectValue = $(this).val();
+            if (selectValue == 'File') {
+                $('#File').css('display', 'block');
+                $('#Link').css('display', 'none');
+                $('#Text').css('display', 'none');
+            } else if (selectValue == 'Link') {
+                $('#Link').css('display', 'block');
+                $('#File').css('display', 'none');
+                $('#Text').css('display', 'none');
+            } else if (selectValue == 'Text') {
+                $('#Text').css('display', 'block');
+                $('#Link').css('display', 'none');
+                $('#File').css('display', 'none');
+            }
+        });
+        $('.password_view_control').hover(function () {
+            $('#old').attr('type', 'text');
+            $('#password').attr('type', 'text');
+            $('#confirm').attr('type', 'text');
+        }, function () {
+            $('#old').attr('type', 'password');
+            $('#password').attr('type', 'password');
+            $('#confirm').attr('type', 'password');
+        });
     });
-    // File type validation
-    $("#document").change(function() {
-        var file = this.files[0];
-        var fileType = file.type;
-        var match = ['application/pdf', 'application/msword', 'application/vnd.ms-office', 'image/jpeg', 'image/png', 'image/jpg'];
-        if(!((fileType == match[0]) || (fileType == match[1]) || (fileType == match[2]) || (fileType == match[3]) || (fileType == match[4]) || (fileType == match[5]))){
-            alert('Sorry, only PDF, DOC, JPG, JPEG, & PNG files are allowed to upload.');
-            $("#document").val('');
-            return false;
-        }
+    $(function () {
+        $('[data-toggle="popover"]').popover()
+    })
+    $('.pwpopover').popover();
+    $('.pwpopover').on('click', function (e) {
+        $('.pwpopover').not(this).popover('hide');
     });
-    $('#fileType').change(function() {
-        var selectValue = $(this).val();
-        if (selectValue == 'File') {
-            $('#File').css('display', 'block');
-            $('#Link').css('display', 'none');
-            $('#Text').css('display', 'none');
-        } else if (selectValue == 'Link') {
-            $('#Link').css('display', 'block');
-            $('#File').css('display', 'none');
-            $('#Text').css('display', 'none');
-        } else if (selectValue == 'Text') {
-            $('#Text').css('display', 'block');
-            $('#Link').css('display', 'none');
-            $('#File').css('display', 'none');
-        }
-    });
-    $('.password_view_control').hover(function() {
-        $('#old').attr('type', 'text');
-        $('#password').attr('type', 'text');
-        $('#confirm').attr('type', 'text');
-    }, function() {
-        $('#old').attr('type', 'password');
-        $('#password').attr('type', 'password');
-        $('#confirm').attr('type', 'password');
-    });
-});
-$(function() {
-    $('[data-toggle="popover"]').popover()
-})
-$('.pwpopover').popover();
-$('.pwpopover').on('click', function(e) {
-    $('.pwpopover').not(this).popover('hide');
-});
 </script>
 <?php require_once $abs_us_root . $us_url_root . 'users/includes/html_footer.php'; ?>

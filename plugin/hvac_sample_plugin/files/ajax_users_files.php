@@ -19,27 +19,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 require_once '../users/init.php';
-// // require_once $abs_us_root.$us_url_root.'users/includes/template/prep.php';
+// require_once $abs_us_root.$us_url_root.'users/includes/template/prep.php';
 $db = DB::getInstance();
 $settings = $db->query('SELECT * FROM settings')->first();
 if (!securePage($_SERVER['PHP_SELF'])) {
     die();
 }
-$hooks =  getMyHooks();
+$hooks = getMyHooks();
 includeHook($hooks, 'pre');
-//dealing with if the user is logged in
+
+// dealing with if the user is logged in
 if ($user->isLoggedIn() && !checkMenu(2, $user->data()->id)) {
-    if (($settings->site_offline==1) && (!in_array($user->data()->id, $master_account)) && ($currentPage != 'login.php') && ($currentPage != 'maintenance.php')) {
+    if (($settings->site_offline == 1) && (!in_array($user->data()->id, $master_account)) && ($currentPage != 'login.php') && ($currentPage != 'maintenance.php')) {
         $user->logout();
         Redirect::to($us_url_root.'users/maintenance.php');
     }
 }
 
-
 $emailQ = $db->query("SELECT * FROM email");
 $emailR = $emailQ->first();
 
-//PHP Goes Here!
+// PHP Goes Here!
 $errors=[];
 $successes=[];
 $userId = $user->data()->id;
@@ -48,7 +48,7 @@ $adminUserTrue = $adminUserTrue > 0 ? true : false;
 $grav = get_gravatar(strtolower(trim($user->data()->email)));
 $validation = new Validate();
 $userdetails=$user->data();
-//Temporary Success Message
+// Temporary Success Message
 $holdover = Input::get('success');
 if ($holdover == 'true') {
     bold("Account Updated");
@@ -276,7 +276,7 @@ if ($formType == 'dataTable') {
             if ($fileUploaded || ($type = 'Link' || $type = 'Text')) {
                 if ($user_file_id > 0) {
                     // $sql = 'UPDATE SET `file_type`= '.$type.',`user_id` = '.$userId.', `file_name`= '.$name.',`file_path`= '.trim($dest_path, '.').', `link` = '.$url.',`note` = '.$note.',`updated_at` = "'.$currentDate.'";';
-                    $sql = 'UPDATE SET `file_type`= '.$type.', `file_name`= "'.$name.'", `file_path`= "'.$dest_path.'", `link` = "'.$url.'", `note` = "'.$note.'", `updated_at` = "'.$currentDate.'";';
+                    $sql = 'UPDATE `plg_tbl_uf` SET `file_type`= '.$type.', `file_name`= "'.$name.'", `file_path`= "'.$dest_path.'", `link` = "'.$url.'", `note` = "'.$note.'", `updated_at` = "'.$currentDate.'" WHERE `id` = '.$user_file_id.';';
                     $userUploads = $db->query($sql);
                 } else {
                     $userUploads = $db->insert('plg_tbl_uf', $userFilesArr);
